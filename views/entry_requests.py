@@ -1,3 +1,7 @@
+import json
+import sqlite3
+from models import Entry, Mood, mood
+
 ENTRIES = [
     {
         "concept": "Javascript",
@@ -30,7 +34,51 @@ ENTRIES = [
 ]
 
 def get_all_entries():
-    return ENTRIES
+    # Open a connection to the database
+    with sqlite3.connect("./dailyjournal.sqlite3") as conn:
+
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # Write the SQL query to get the information you want
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.concept,
+            e.entry,
+            e.mood_id,
+            e.date,
+            m.label mood_label
+        FROM Entries e
+        JOIN Moods m
+            ON m.id = e.mood_id
+        """)
+
+        # Initialize an empty list to hold all animal representations
+        entries = []
+
+        # Convert rows of data into a Python list
+        dataset = db_cursor.fetchall()
+
+        # Iterate list of data returned from database
+        for row in dataset:
+
+            # Create an animal instance from the current row
+            entry = Entry(row['id'], row['concept'], row['entry'], row['mood_id'],
+                            row['date'])
+
+            # Create a mood instance from the current row
+            mood = Mood(row['mood_id'], row['mood_label'])
+            
+            # Add the dictionary representation of the mood to the entry
+            entry.mood = mood.__dict__
+
+            # Add the dictionary representation of the entry to the list
+            entries.append(entry.__dict__)
+
+    # Use `json` package to properly serialize list as JSON
+    return json.dumps(entries)
 
 # Function with a single parameter
 def get_single_entry(id):
