@@ -82,18 +82,39 @@ def get_all_entries():
 
 # Function with a single parameter
 def get_single_entry(id):
-    # Variable to hold the found entry, if it exists
-    requested_entry = None
+    with sqlite3.connect("./dailyjournal.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
 
-    # Iterate the ENTRIES list above. Very similar to the
-    # for..of loops you used in JavaScript.
-    for entry in ENTRIES:
-        # Dictionaries in Python use [] notation to find a key
-        # instead of the dot notation that JavaScript used.
-        if entry["id"] == id:
-            requested_entry = entry
+        # Use a ? parameter to inject a variable's value into the SQL statement.
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.concept,
+            e.entry,
+            e.mood_id,
+            e.date,
+            m.label mood_label
+        FROM Entries e
+        JOIN Moods m
+            ON m.id = e.mood_id
+        WHERE e.id = ?
+        """, ( id, ))
 
-    return requested_entry
+        # Load the single result into memory
+        data = db_cursor.fetchone()
+
+        # Create an entry instance from the current row
+        entry = Entry(data['id'], data['concept'], data['entry'],
+                            data['mood_id'], data['date'])
+        
+        # Create a mood instance from the current row
+        mood = Mood(data['mood_id'], data['mood_label'])
+            
+        # Add the dictionary representation of the mood to the entry
+        entry.mood = mood.__dict__
+
+        return json.dumps(entry.__dict__)
 
 def create_entry(entry):
     # Get the id value of the last entry in the list
@@ -112,19 +133,13 @@ def create_entry(entry):
     return entry
 
 def delete_entry(id):
-    # Initial -1 value for entry index, in case one isn't found
-    entry_index = -1
+    with sqlite3.connect("./dailyjournal.sqlite3") as conn:
+        db_cursor = conn.cursor()
 
-    # Iterate the ENTRIES list, but use enumerate() so that you
-    # can access the index value of each item
-    for index, entry in enumerate(ENTRIES):
-        if entry["id"] == id:
-            # Found the entry. Store the current index.
-            entry_index = index
-
-    # If the entry was found, use pop(int) to remove it from list
-    if entry_index >= 0:
-        ENTRIES.pop(entry_index)
+        db_cursor.execute("""
+        DELETE FROM Entries
+        WHERE id = ?
+        """, (id, ))
         
 def update_entry(id, new_entry):
     # Iterate the ENTRIES list, but use enumerate() so that
