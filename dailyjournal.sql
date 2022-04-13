@@ -1,0 +1,6 @@
+FOREIGN KEY(`column`) REFERENCES `Table`(`column`)
+
+CREATE TABLE 'Moods' (
+`id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+`type`  TEXT NOT NULL
+);
