@@ -1,6 +1,6 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views.entry_requests import create_entry, delete_entry, get_all_entries, get_single_entry, update_entry
+from views.entry_requests import create_entry, delete_entry, get_all_entries, get_single_entry, search_entry, update_entry
 from views.mood_requests import get_all_moods
 
 
@@ -15,9 +15,8 @@ class HandleRequests(BaseHTTPRequestHandler):
     """
     def parse_url(self, path):
         # Just like splitting a string in JavaScript. If the
-        # path is "/animals/1", the resulting list will
-        # have "" at index 0, "animals" at index 1, and "1"
-        # at index 2.
+        # path is "/entries/1", the resulting list will have 
+        # "" at index 0, "entries" at index 1, and "1" at index 2.
         path_params = path.split("/")
         resource = path_params[1]
 
@@ -82,17 +81,26 @@ class HandleRequests(BaseHTTPRequestHandler):
         response = {}  # Default response
 
         # Parse the URL and capture the tuple that is returned
-        (resource, id) = self.parse_url(self.path)
+        parsed = self.parse_url(self.path)
         
-        # It's an if..else statement
-        if resource == "entries":
-            if id is not None:
-                response = f"{get_single_entry(id)}"
-            else:
-                response = f"{get_all_entries()}"
-        elif resource == "moods":
-            response = get_all_moods()
+        if len(parsed) == 2:
+            ( resource, id ) = parsed
+        
+            # It's an if..else statement
+            if resource == "entries":
+                if id is not None:
+                    response = f"{get_single_entry(id)}"
+                else:
+                    response = f"{get_all_entries()}"
+            elif resource == "moods":
+                response = get_all_moods()
 
+
+        elif len(parsed) == 3:
+            ( resource, key, value ) = parsed
+            
+            if key == "q" and resource == "entries":
+                response = search_entry(value)
 
         # This weird code sends a response back to the client
         self.wfile.write(f"{response}".encode())
