@@ -1,6 +1,8 @@
 import json
 import sqlite3
-from models import Entry, Mood, mood
+import datetime
+from models import Entry, Mood, EntryTag
+from models.tag import Tag
 
 ENTRIES = [
     {
@@ -64,7 +66,7 @@ def get_all_entries():
         # Iterate list of data returned from database
         for row in dataset:
 
-            # Create an animal instance from the current row
+            # Create an entry instance from the current row
             entry = Entry(row['id'], row['concept'], row['entry'], row['mood_id'],
                             row['date'])
 
@@ -73,8 +75,29 @@ def get_all_entries():
             
             # Add the dictionary representation of the mood to the entry
             entry.mood = mood.__dict__
-
-            # Add the dictionary representation of the entry to the list
+            
+            # Now when you get all entries you need to check for tags and add them to the entry
+            # Write the SQL query to get the information you want
+            db_cursor.execute("""
+            SELECT
+                t.id,
+                t.name
+            FROM Entries e
+            JOIN EntryTags et
+                ON e.id = et.entry_id
+            JOIN Tags t
+                ON t.id = et.tag_id
+            WHERE e.id = ?
+                """, (entry.id, ))
+            
+            #fetch all of the tags (in a python list)
+            tagList = db_cursor.fetchall()
+            
+            for row in tagList:
+                tag = Tag(row['id'], row['name'])
+                
+                entry.tags.append(tag.__dict__)
+                
             entries.append(entry.__dict__)
 
     # Use `json` package to properly serialize list as JSON
@@ -125,13 +148,25 @@ def create_entry(new_entry):
             (concept, entry, mood_id, date) 
         VALUES 
             (?, ?, ?, ?);
-        """, (new_entry['concept'], new_entry['entry'], new_entry['moodId'], new_entry['date'], ))
+        """, (new_entry['concept'], new_entry['entry'], new_entry['moodId'], datetime.date.today()))
         
         id = db_cursor.lastrowid
         
         new_entry['id'] = id
         
-        return new_entry
+        # Modify the create_entry method to loop through a list of tags after adding the entry 
+        # to the database. Inside the loop, you'll execute another sql command to add a row 
+        # to the entrytag table.
+        
+        for tag in new_entry['tags']:
+            db_cursor.execute("""
+            INSERT INTO EntryTags 
+                (entry_id, tag_id) 
+            VALUES 
+                (?, ?);
+            """, (id, tag))
+        
+    return json.dumps(new_entry)
     
 def delete_entry(id):
     with sqlite3.connect("./dailyjournal.sqlite3") as conn:
