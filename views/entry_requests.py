@@ -40,9 +40,11 @@ def get_all_entries():
     with sqlite3.connect("./dailyjournal.sqlite3") as conn:
 
         # Just use these. It's a Black Box.
+        # sqlite3 allows python and sql to be translated and interact
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
 
+        # cursor is "give me sql and i will speak to the database"
         # Write the SQL query to get the information you want
         db_cursor.execute("""
         SELECT
@@ -60,10 +62,12 @@ def get_all_entries():
         # Initialize an empty list to hold all animal representations
         entries = []
 
-        # Convert rows of data into a Python list
+        # Convert rows of data into a Python list (list of dictionaries)
+        # fetchall is get all data and uses the factory defined at top (sqliterow) and return dictionaries (python)
         dataset = db_cursor.fetchall()
 
         # Iterate list of data returned from database
+        # using python code to loop through sql data
         for row in dataset:
 
             # Create an entry instance from the current row
@@ -74,6 +78,7 @@ def get_all_entries():
             mood = Mood(row['mood_id'], row['mood_label'])
             
             # Add the dictionary representation of the mood to the entry
+            # the value of mood is an object and now we are turning it into a dictionary (built in value) (dunderscore)
             entry.mood = mood.__dict__
             
             # Now when you get all entries you need to check for tags and add them to the entry
@@ -101,6 +106,7 @@ def get_all_entries():
             entries.append(entry.__dict__)
 
     # Use `json` package to properly serialize list as JSON
+    # takes the entire thing and turns it into a string
     return json.dumps(entries)
 
 # Function with a single parameter

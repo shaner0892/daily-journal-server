@@ -2,12 +2,16 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from views.entry_requests import create_entry, delete_entry, get_all_entries, get_single_entry, search_entry, update_entry
 from views.mood_requests import get_all_moods
+from views.tag_requests import get_all_tags
 
+# This is your new main. It runs automatically and is not imported anywhere
 
 # Here's a class. It inherits from another class.
 # For now, think of a class as a container for functions that
 # work together for a common purpose. In this case, that
 # common purpose is to respond to HTTP requests from a client.
+
+# A class is identified by all capital letters and bunched together (Pasco?)
 class HandleRequests(BaseHTTPRequestHandler):
     # This is a Docstring it should be at the beginning of all classes and functions
     # It gives a description of the class or function
@@ -80,6 +84,7 @@ class HandleRequests(BaseHTTPRequestHandler):
         self._set_headers(200)
         response = {}  # Default response
 
+        # path is everything that's after the localhost
         # Parse the URL and capture the tuple that is returned
         parsed = self.parse_url(self.path)
         
@@ -94,6 +99,8 @@ class HandleRequests(BaseHTTPRequestHandler):
                     response = f"{get_all_entries()}"
             elif resource == "moods":
                 response = get_all_moods()
+            elif resource == "tags":
+                response = get_all_tags()
 
 
         elif len(parsed) == 3:
@@ -130,6 +137,7 @@ class HandleRequests(BaseHTTPRequestHandler):
             new_entry = create_entry(post_body)
 
         # Encode the new entry and send in response
+        # takes the string of JSON and packages and sends it back as a response
         self.wfile.write(f"{new_entry}".encode())
 
     # Here's a method on the class that overrides the parent's method.
@@ -165,7 +173,7 @@ class HandleRequests(BaseHTTPRequestHandler):
         # Encode the new entry and send in response
         self.wfile.write("".encode())
 
-
+# Typically this is the very last thing on your "main."
 # This function is not inside the class. It is the starting
 # point of this application.
 def main():
@@ -173,8 +181,10 @@ def main():
     """
     host = ''
     port = 8088
+    # this is basically an event listener: take this host and port and set up server
+    # HandleRequests (a class) is a set of instructions for what to do with incoming requests
     HTTPServer((host, port), HandleRequests).serve_forever()
 
-
+# __main__ is not referring to the above function, just this is the main module/first module run (python names is main). It is directly executed, not imported
 if __name__ == "__main__":
     main()

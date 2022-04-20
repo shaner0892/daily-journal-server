@@ -1,32 +1,10 @@
-# MOODS = [
-#     {
-#         "id": 1,
-#         "label": "Happy"
-#     },
-#     {
-#         "id": 2,
-#         "label": "Sad"
-#     },
-#     {
-#         "id": 3,
-#         "label": "Angry"
-#     },
-#     {
-#         "id": 4,
-#         "label": "Ok"
-#     }
-# ]
-
-# def get_all_moods():
-#     return MOODS
-
 import json
 import sqlite3
 
-from models.mood import Mood
+from models.tag import Tag
 
 
-def get_all_moods():
+def get_all_tags():
     # Open a connection to the database
     with sqlite3.connect("./dailyjournal.sqlite3") as conn:
 
@@ -39,13 +17,13 @@ def get_all_moods():
         # Write the SQL query to get the information you want
         db_cursor.execute("""
         SELECT
-            m.id,
-            m.label
-        FROM Moods m
+            t.id,
+            t.name
+        FROM Tags t
         """)
 
         # Initialize an empty list to hold all animal representations
-        moods = []
+        tags = []
 
         # Convert rows of data into a Python list (list of dictionaries)
         # fetchall is get all data and uses the factory defined at top (sqliterow) and return dictionaries (python)
@@ -56,10 +34,10 @@ def get_all_moods():
         for row in dataset:
 
             # Create an entry instance from the current row
-            mood = Mood(row['id'], row['label'])
+            tag = Tag(row['id'], row['name'])
             
-            moods.append(mood.__dict__)
+            tags.append(tag.__dict__)
 
     # Use `json` package to properly serialize list as JSON
     # takes the entire thing and turns it into a string
-    return json.dumps(moods)
+    return json.dumps(tags)
